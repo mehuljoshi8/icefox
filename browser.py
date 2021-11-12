@@ -1,24 +1,42 @@
 # Name: Mehul Joshi
-# Dogzilla
-
+# icefox: just a better version of firefox. 
 import socket
 import ssl
+import sys
+
+def main(): 
+	load(sys.argv[1])
 
 #############
-# Requests information from a given path
+# Handles the file:/// scheme
+#############
+def file_request_handler(path): 
+	# but the general idea would be to add the file:/// scheme assuming
+	# there are no nefarious users of this feature, meaning that
+	# it always starts with file:///
+	# if the scheme is file:///
+	# 		i >  there is no "host"
+	# 		ii > so instead just find a way to read/print out the contents
+	# 				of the file/directory that we are pointing to (very 333 like)
+	assert path.startswith("file://")
+	path = path[len("file://"):]
+	print(path)
+	# complete the rest of this method with posix
+	# so the basic idea is open the file that we are pointing to
+	# check if the file is a directory
+	# if it is a directory, print out the contents of that directory
+	# otherwise it's a file so try to print out the contents of that file. 
+ 
+#############
+# Requests information from a given url
 #############
 def request(url): 
-	# if we are going to be adding support for opening files on my computer
-	# I might need to think of the design of the existing code and how
-	# introducing this new feature will clash with my existing code base. 
- 
- 
- 
- 	# get the scheme and url for the given "path"
+	# get the scheme and url for the given "path"
 	scheme, url = url.split("://", 1)
 	
 	# websites must be either http or https
 	# adding support for file types
+	print(url)
 	assert scheme in ["http", "https"], \
 		"Unknown scheme {}".format(scheme)
 	
@@ -52,7 +70,7 @@ def request(url):
 	s.send(b"GET " + str.encode(path) + b" HTTP/1.1\r\n" +
 		   b"Host: " + str.encode(host) + b"\r\n" + 
      	   b"Connection: close\r\n" + 
-           b"User-Agent: Amoli\r\n\r\n")
+           b"User-Agent: icefox\r\n\r\n")
  
 	# get the response back
 	response = s.makefile("r", encoding="utf-8", newline="\r\n")
@@ -93,10 +111,12 @@ def show(body):
 # Loads a given page into our "browser"
 ##########
 def load(url):
-    headers, body = request(url)
-    show(body)
+    if url.startswith("file:///"):
+        file_request_handler(url)
+    else: 
+        headers, body = request(url)
+        show(body)
 
 # This is python's version of a main function
 if __name__ == "__main__": 
-    import sys
-    load(sys.argv[1])
+	main()    
