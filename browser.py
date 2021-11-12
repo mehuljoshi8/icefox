@@ -3,12 +3,13 @@
 import socket
 import ssl
 import sys
+import os
 
 def main(): 
 	load(sys.argv[1])
 
 #############
-# Handles the file:/// scheme
+# Handles the file:// scheme
 #############
 def file_request_handler(path): 
 	# but the general idea would be to add the file:/// scheme assuming
@@ -20,12 +21,27 @@ def file_request_handler(path):
 	# 				of the file/directory that we are pointing to (very 333 like)
 	assert path.startswith("file://")
 	path = path[len("file://"):]
-	print(path)
 	# complete the rest of this method with posix
 	# so the basic idea is open the file that we are pointing to
 	# check if the file is a directory
 	# if it is a directory, print out the contents of that directory
 	# otherwise it's a file so try to print out the contents of that file. 
+	if os.path.exists(path):
+		if os.path.isdir(path):
+			print(".")
+			print("..")
+			for f in os.listdir(path):
+				print(f)
+		else: # the path points to a file so print out the result
+			file_o = open(path)
+			body = file_o.read()
+			# print(body)
+			show(body)
+			file_o.close()
+	else:
+		# add the query processor you built in 333 here that way it can find
+		# act as a local file searcher..., which is pretty cool if you ask me
+		print("file doesn't exist... new feature coming soon :)")
  
 #############
 # Requests information from a given url
@@ -111,7 +127,7 @@ def show(body):
 # Loads a given page into our "browser"
 ##########
 def load(url):
-    if url.startswith("file:///"):
+    if url.startswith("file://"):
         file_request_handler(url)
     else: 
         headers, body = request(url)
