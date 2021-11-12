@@ -35,7 +35,6 @@ def file_request_handler(path):
 		else: # the path points to a file so print out the result
 			file_o = open(path)
 			body = file_o.read()
-			# print(body)
 			show(body)
 			file_o.close()
 	else:
@@ -124,7 +123,7 @@ def show(body):
 			print(c, end="")
 
 ###########
-# Loads a given page into our "browser"
+# Loads a given scheme into our "browser"
 ##########
 def load(url):
     if url.startswith("file://"):
