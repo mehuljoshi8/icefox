@@ -133,6 +133,34 @@ def show(body):
 			in_angle = False
 		elif not in_angle: 
 			print(c, end="")
+   
+#######
+# The render method shows everything that is the body
+# tag of an html document. Assume, that the client
+# of this method has a basic understanding of html tags
+#######
+def render(body):
+	in_body = False
+	in_angle = False
+	c = 0
+	while c < len(body):
+		if body[c: c+6] == "<body>":
+			c = c + 6
+			in_body = True
+		elif body[c: c+7] == "</body>":
+			c = c + 7
+			in_body = False
+		elif in_body:
+			if body[c] == "<":
+				in_angle = True
+			elif body[c] == ">":
+				in_angle = False
+			elif not in_angle:
+				print(body[c], end="")
+			c = c + 1
+		else:
+			c = c + 1
+
 
 ###########
 # Loads a given scheme into our "browser"
@@ -144,7 +172,7 @@ def load(url):
         data_request_handler(url)
     else: 
         headers, body = request(url)
-        show(body)
+        render(body)
 
 # This is python's version of a main function
 if __name__ == "__main__": 
