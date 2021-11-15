@@ -125,6 +125,13 @@ def request(url):
 #  A very 1.0 version of rendering the HTML code
 ########
 def show(body):
+    # Todo: rewrite show to use StringIO instead of print
+    # statements. This way the code is a lot cleaner
+    # The idea I have is to use output streams
+    # to have it so that if can find a body
+    # then the output is everything insdie the body
+    # otherwise it is just all the output that
+    # we can gather from the html document. 
 	in_angle = False
 	for c in body:
 		if c == "<":
@@ -144,10 +151,10 @@ def render(body):
 	in_angle = False
 	c = 0
 	while c < len(body):
-		if body[c: c+6] == "<body>":
+		if body[c: c + 6] == "<body>":
 			c = c + 6
 			in_body = True
-		elif body[c: c+7] == "</body>":
+		elif body[c: c + 7] == "</body>":
 			c = c + 7
 			in_body = False
 		elif in_body:
@@ -160,7 +167,6 @@ def render(body):
 			c = c + 1
 		else:
 			c = c + 1
-
 
 ###########
 # Loads a given scheme into our "browser"
