@@ -5,8 +5,8 @@ import ssl
 import sys
 import os
 
-def main(): 
-	load(sys.argv[1])
+def main():
+    load(' '.join(sys.argv[1:]))
 
 #############
 # Handles the file:// scheme
@@ -40,8 +40,20 @@ def file_request_handler(path):
 	else:
 		# add the query processor you built in 333 here that way it can find
 		# act as a local file searcher..., which is pretty cool if you ask me
-		print("file doesn't exist... new feature coming soon :)")
+		print("file doesn't exist")
  
+############
+# Handles the data:* scheme. 
+############
+def data_request_handler(data):
+    # For now, I'm going to assume that the
+    # data scheme can only take 1 form which is
+    # text/html, just for the sake of convenience. 
+    # and the general format will be: 
+    # data:text/html,[my html data]
+    data = data[len("data:text/html,"):]
+    show(data)
+
 #############
 # Requests information from a given url
 #############
@@ -128,6 +140,8 @@ def show(body):
 def load(url):
     if url.startswith("file://"):
         file_request_handler(url)
+    elif url.startswith("data:"): 
+        data_request_handler(url)
     else: 
         headers, body = request(url)
         show(body)
