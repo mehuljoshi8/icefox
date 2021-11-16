@@ -4,6 +4,7 @@ import socket
 import ssl
 import sys
 import os
+import io
 
 def main():
     load(' '.join(sys.argv[1:]))
@@ -38,8 +39,11 @@ def file_request_handler(path):
 			show(body)
 			file_o.close()
 	else:
-		# add the query processor you built in 333 here that way it can find
-		# act as a local file searcher..., which is pretty cool if you ask me
+    	# Technically a query processor wouldn't be the best thing here
+		# but i do have an idea of adding another scheme
+		# with a query processor that allows
+		# users to search information from
+		# a directory given a search phrase. 
 		print("file doesn't exist")
  
 ############
@@ -121,6 +125,17 @@ def request(url):
 	s.close()
 	return headers, body
 
+def show_helper(c, stream, in_angle):
+	if c == "<":
+		return True
+	if c == ">":
+		return False
+	if not in_angle:
+		stream.write(c)
+		return False
+	return True
+
+
 ########
 #  A very 1.0 version of rendering the HTML code
 ########
@@ -132,21 +147,14 @@ def show(body):
     # then the output is everything insdie the body
     # otherwise it is just all the output that
     # we can gather from the html document. 
-	in_angle = False
-	for c in body:
-		if c == "<":
-			in_angle = True
-		elif c == ">": 
-			in_angle = False
-		elif not in_angle: 
-			print(c, end="")
-   
-#######
-# The render method shows everything that is the body
-# tag of an html document. Assume, that the client
-# of this method has a basic understanding of html tags
-#######
-def render(body):
+    
+    
+    # now alter the following code so that even if
+    # the "body" doesn't have a body tag we still end
+    # up getting the html output that is in our file
+	body_output = io.StringIO()
+	doc_output = io.StringIO()
+	found_body = False
 	in_body = False
 	in_angle = False
 	c = 0
@@ -154,19 +162,26 @@ def render(body):
 		if body[c: c + 6] == "<body>":
 			c = c + 6
 			in_body = True
+			found_body = True
 		elif body[c: c + 7] == "</body>":
 			c = c + 7
 			in_body = False
 		elif in_body:
-			if body[c] == "<":
-				in_angle = True
-			elif body[c] == ">":
-				in_angle = False
-			elif not in_angle:
-				print(body[c], end="")
+			in_angle = show_helper(body[c], body_output, in_angle)
+			in_angle = show_helper(body[c], doc_output, in_angle)
 			c = c + 1
 		else:
+			in_angle = show_helper(body[c], doc_output, in_angle)
 			c = c + 1
+
+	if found_body:
+		print(body_output.getvalue())
+	else:
+		print(doc_output.getvalue())
+  
+	body_output.close()
+	doc_output.close()
+
 
 ###########
 # Loads a given scheme into our "browser"
@@ -178,7 +193,7 @@ def load(url):
         data_request_handler(url)
     else: 
         headers, body = request(url)
-        render(body)
+        show(body)
 
 # This is python's version of a main function
 if __name__ == "__main__": 
