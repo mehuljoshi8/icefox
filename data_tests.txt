@@ -1,1 +1,1 @@
-data:text/html,<h1>Hello, World</h1>
+data:text/html,&lt;div&gt;

@@ -135,11 +135,11 @@ def show_helper(c, stream, in_angle):
 		return False
 	return True
 
-
 ########
 #  A very 1.0 version of rendering the HTML code
 ########
 def show(body):
+	print("body = ", body)
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
 	found_body = False
@@ -155,12 +155,22 @@ def show(body):
 			c = c + 7
 			in_body = False
 		else:
+			s = body[c]
+			print("body[" + str(c) + "] = ", body[c])
 			# add support for the less-than and greater-than entities here
+   			# if body[c: c+4]  == "&lt;" or body[c: c+4] == "&gt;":
+			if body[c: c + 4] == "&lt;":
+				s = "<"
+				c = c + 3
+			if body[c: c + 4] == "&gt;":
+				s = ">"
+				c = c + 3
+    
 			if in_body:
-				in_angle = show_helper(body[c], body_output, in_angle)		
-			in_angle = show_helper(body[c], doc_output, in_angle)
+				in_angle = show_helper(s, body_output, in_angle)
+			in_angle = show_helper(s, doc_output, in_angle)
 			c = c + 1
-
+    
 	if found_body:
 		print(body_output.getvalue())
 	else:
