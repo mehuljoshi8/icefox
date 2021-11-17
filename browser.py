@@ -140,18 +140,6 @@ def show_helper(c, stream, in_angle):
 #  A very 1.0 version of rendering the HTML code
 ########
 def show(body):
-    # Todo: rewrite show to use StringIO instead of print
-    # statements. This way the code is a lot cleaner
-    # The idea I have is to use output streams
-    # to have it so that if can find a body
-    # then the output is everything insdie the body
-    # otherwise it is just all the output that
-    # we can gather from the html document. 
-    
-    
-    # now alter the following code so that even if
-    # the "body" doesn't have a body tag we still end
-    # up getting the html output that is in our file
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
 	found_body = False
@@ -166,11 +154,10 @@ def show(body):
 		elif body[c: c + 7] == "</body>":
 			c = c + 7
 			in_body = False
-		elif in_body:
-			in_angle = show_helper(body[c], body_output, in_angle)
-			in_angle = show_helper(body[c], doc_output, in_angle)
-			c = c + 1
 		else:
+			# add support for the less-than and greater-than entities here
+			if in_body:
+				in_angle = show_helper(body[c], body_output, in_angle)		
 			in_angle = show_helper(body[c], doc_output, in_angle)
 			c = c + 1
 
