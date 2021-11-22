@@ -36,8 +36,8 @@ def file_request_handler(path):
 		else: # the path points to a file so print out the result
 			file_o = open(path)
 			body = file_o.read()
-			show(body)
 			file_o.close()
+			return show(body)
 	else:
     	# Technically a query processor wouldn't be the best thing here
 		# but i do have an idea of adding another scheme
@@ -56,7 +56,7 @@ def data_request_handler(data):
     # and the general format will be: 
     # data:text/html,[my html data]
     data = data[len("data:text/html,"):]
-    show(data)
+    return show(data)
 
 #############
 # Requests information from a given url
@@ -78,6 +78,8 @@ def request(url):
 	path = "/" + path
 	
 	# create a socket to communicate with that site
+	# a socket is nothing more than a file descriptor for network
+	# i/o. 
 	s = socket.socket(
 		family=socket.AF_INET,
 		type=socket.SOCK_STREAM,
@@ -126,6 +128,13 @@ def request(url):
 	return headers, body
 
 def show_helper(c, stream, in_angle):
+	if c == "&lt;":
+		stream.write("<")
+		return False
+	if c == "&gt;": 
+		stream.write(">")
+		return False
+
 	if c == "<":
 		return True
 	if c == ">":
@@ -139,7 +148,6 @@ def show_helper(c, stream, in_angle):
 #  A very 1.0 version of rendering the HTML code
 ########
 def show(body):
-	print("body = ", body)
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
 	found_body = False
@@ -156,25 +164,20 @@ def show(body):
 			in_body = False
 		else:
 			s = body[c]
-			print("body[" + str(c) + "] = ", body[c])
 			# add support for the less-than and greater-than entities here
-   			# if body[c: c+4]  == "&lt;" or body[c: c+4] == "&gt;":
-			if body[c: c + 4] == "&lt;":
-				s = "<"
+			if body[c: c + 4] == "&lt;" or body[c: c + 4] == "&gt;":
+				s = body[c: c + 4]
 				c = c + 3
-			if body[c: c + 4] == "&gt;":
-				s = ">"
-				c = c + 3
-    
+
 			if in_body:
 				in_angle = show_helper(s, body_output, in_angle)
 			in_angle = show_helper(s, doc_output, in_angle)
 			c = c + 1
     
 	if found_body:
-		print(body_output.getvalue())
+		return body_output.getvalue()
 	else:
-		print(doc_output.getvalue())
+		return doc_output.getvalue()
   
 	body_output.close()
 	doc_output.close()
@@ -185,12 +188,12 @@ def show(body):
 ##########
 def load(url):
     if url.startswith("file://"):
-        file_request_handler(url)
+        print(file_request_handler(url))
     elif url.startswith("data:"): 
-        data_request_handler(url)
+        print(data_request_handler(url))
     else: 
         headers, body = request(url)
-        show(body)
+        print(show(body))
 
 # This is python's version of a main function
 if __name__ == "__main__": 
