@@ -5,7 +5,9 @@ import unittest
 import browser
 
 class TestBrowserV1(unittest.TestCase):
-    # tests for the data_scheme
+    # tests for the data scheme
+    # examples of using data are
+    # data:text/html,[my random stuff]
     def test_data_scheme(self):
         s = "data:text/html,&lt;div&gt;"
         expected = "<div>"

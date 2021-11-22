@@ -187,13 +187,16 @@ def show(body):
 # Loads a given scheme into our "browser"
 ##########
 def load(url):
-    if url.startswith("file://"):
-        print(file_request_handler(url))
-    elif url.startswith("data:"): 
-        print(data_request_handler(url))
-    else: 
-        headers, body = request(url)
-        print(show(body))
+	if url.startswith("file://"):
+		print(file_request_handler(url))
+	elif url.startswith("data:"): 
+		print(data_request_handler(url))
+	else: 
+		headers, body = request(url)
+		if url.startswith("view-source:"):
+			print(body)
+		else: 
+			print(show(body))
 
 # This is python's version of a main function
 if __name__ == "__main__": 
