@@ -5,6 +5,7 @@ import ssl
 import sys
 import os
 import io
+import gzip
 
 def main():
     load(' '.join(sys.argv[1:]))
@@ -67,7 +68,6 @@ def request(url):
 	
 	# websites must be either http or https
 	# adding support for file types
-	print(url)
 	assert scheme in ["http", "https"], \
 		"Unknown scheme {}".format(scheme)
 	
@@ -103,26 +103,29 @@ def request(url):
 	s.send(b"GET " + str.encode(path) + b" HTTP/1.1\r\n" +
 		   b"Host: " + str.encode(host) + b"\r\n" + 
      	   b"Connection: close\r\n" + 
-           b"User-Agent: icefox\r\n\r\n")
+           b"User-Agent: icefox\r\n" + 
+           b"Accept-Encoding: gzip\r\n\r\n")
  
 	# get the response back
-	response = s.makefile("r", encoding="utf-8", newline="\r\n")
-
+	# set the compression stuff here 
+	response = s.makefile("rb", encoding="utf-8", newline="\r\n")
+ 
 	# parse the response
-	statusline = response.readline()
+	statusline = response.readline().decode() 
+	# print("decompressed statusline = ", gzip.decompress(statusline))
 	version, status, explanation = statusline.split(" ", 2)
 	assert status == "200", "{}: {}".format(status, explanation)
 
 	# Create the headers
 	headers = {}
 	while True: 
-		line = response.readline()
+		line = response.readline().decode()
 		if line == "\r\n": break
 		header, value = line.split(":", 1)
 		headers[header.lower()] = value.strip()
 
 	# Read the rest of the body
-	body = response.read()
+	body = gzip.decompress(response.read()).decode()
 	# Close the socket
 	s.close()
 	return headers, body
@@ -193,6 +196,8 @@ def load(url):
 		print(data_request_handler(url))
 	else: 
 		headers, body = request(url)
+		# Technically files can also be put underview source
+		# but I am going to save that for a later exercise   	
 		if url.startswith("view-source:"):
 			print(body)
 		else: 
