@@ -7,6 +7,12 @@ import os
 import io
 import gzip
 
+import tkinter
+
+# The initial width and height of our browser
+WIDTH, HEIGHT = 800, 600
+
+
 def main():
     load(' '.join(sys.argv[1:]))
 
@@ -186,23 +192,39 @@ def show(body):
 	doc_output.close()
 
 
-###########
-# Loads a given scheme into our "browser"
-##########
-def load(url):
-	if url.startswith("file://"):
-		print(file_request_handler(url))
-	elif url.startswith("data:"): 
-		print(data_request_handler(url))
-	else: 
-		headers, body = request(url)
-		# Technically files can also be put underview source
-		# but I am going to save that for a later exercise   	
-		if url.startswith("view-source:"):
-			print(body)
-		else: 
-			print(show(body))
 
-# This is python's version of a main function
+class Browser: 
+	def __init__(self):
+		self.window = tkinter.Tk()
+		self.canvas = tkinter.Canvas(
+			self.window,
+			width=WIDTH,
+			height=HEIGHT
+		)
+		self.canvas.pack()
+	
+	###########
+	# Loads a given scheme into our browser
+	##########
+	def load(self, url):
+		if url.startswith("file://"):
+			print(file_request_handler(url))
+		elif url.startswith("data:"):
+			print(data_request_handler(url))
+		else: 
+			header, body = request(url)
+			# Technically files can also be put underview source
+			# but I am going to save that for a later exercise   	
+			if url.startswith("view-source:"):
+				print(body)
+			else: 
+				print(show(body))
+    
+		# self.canvas.create_rectangle(10, 20, 400, 300)
+		# self.canvas.create_oval(100, 100, 150, 150)
+		# self.canvas.create_text(200, 150, text="Hi!")
+
+# # This is python's version of a main function
 if __name__ == "__main__": 
-	main()    
+	Browser().load(sys.argv[1])
+	tkinter.mainloop()
