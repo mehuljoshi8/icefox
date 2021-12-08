@@ -12,7 +12,6 @@ import tkinter
 # The initial width and height of our browser
 WIDTH, HEIGHT = 800, 600
 
-
 def main():
     load(' '.join(sys.argv[1:]))
 
@@ -44,7 +43,7 @@ def file_request_handler(path):
 			file_o = open(path)
 			body = file_o.read()
 			file_o.close()
-			return show(body)
+			return lex(body)
 	else:
     	# Technically a query processor wouldn't be the best thing here
 		# but i do have an idea of adding another scheme
@@ -63,7 +62,7 @@ def data_request_handler(data):
     # and the general format will be: 
     # data:text/html,[my html data]
     data = data[len("data:text/html,"):]
-    return show(data)
+    return lex(data)
 
 #############
 # Requests information from a given url
@@ -115,7 +114,7 @@ def request(url):
 	# get the response back
 	# set the compression stuff here 
 	response = s.makefile("rb", encoding="utf-8", newline="\r\n")
- 
+
 	# parse the response
 	statusline = response.readline().decode() 
 	# print("decompressed statusline = ", gzip.decompress(statusline))
@@ -136,7 +135,7 @@ def request(url):
 	s.close()
 	return headers, body
 
-def show_helper(c, stream, in_angle):
+def lex_helper(c, stream, in_angle):
 	if c == "&lt;":
 		stream.write("<")
 		return False
@@ -154,9 +153,9 @@ def show_helper(c, stream, in_angle):
 	return True
 
 ########
-#  A very 1.0 version of rendering the HTML code
+# 
 ########
-def show(body):
+def lex(body):
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
 	found_body = False
@@ -179,8 +178,8 @@ def show(body):
 				c = c + 3
 
 			if in_body:
-				in_angle = show_helper(s, body_output, in_angle)
-			in_angle = show_helper(s, doc_output, in_angle)
+				in_angle = lex_helper(s, body_output, in_angle)
+			in_angle = lex_helper(s, doc_output, in_angle)
 			c = c + 1
     
 	if found_body:
@@ -190,8 +189,6 @@ def show(body):
   
 	body_output.close()
 	doc_output.close()
-
-
 
 class Browser: 
 	def __init__(self):
@@ -218,7 +215,15 @@ class Browser:
 			if url.startswith("view-source:"):
 				print(body)
 			else: 
-				print(show(body))
+				print(lex(body))
+				HSTEP, VSTEP = 10, 18
+				cursor_x, cursor_y = HSTEP, VSTEP
+				for c in lex(body): 
+					if cursor_x >= WIDTH - HSTEP: 
+						cursor_y += VSTEP
+						cursor_x = HSTEP
+					self.canvas.create_text(cursor_x, cursor_y, text=c)
+					cursor_x += HSTEP
     
 		# self.canvas.create_rectangle(10, 20, 400, 300)
 		# self.canvas.create_oval(100, 100, 150, 150)
@@ -226,5 +231,5 @@ class Browser:
 
 # # This is python's version of a main function
 if __name__ == "__main__": 
-	Browser().load(sys.argv[1])
+	Browser().load(' '.join(sys.argv[1:]))
 	tkinter.mainloop()
