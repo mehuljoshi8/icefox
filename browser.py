@@ -18,31 +18,20 @@ HSTEP, VSTEP = 10, 18
 # Handles the file:// scheme
 #############
 def file_request_handler(path): 
-	# but the general idea would be to add the file:/// scheme assuming
-	# there are no nefarious users of this feature, meaning that
-	# it always starts with file:///
-	# if the scheme is file:///
-	# 		i >  there is no "host"
-	# 		ii > so instead just find a way to read/print out the contents
-	# 				of the file/directory that we are pointing to (very 333 like)
 	assert path.startswith("file://")
 	path = path[len("file://"):]
  
- 	# complete the rest of this method with posix
-	# so the basic idea is open the file that we are pointing to
-	# check if the file is a directory
-	# if it is a directory, print out the contents of that directory
-	# otherwise it's a file so try to print out the contents of that file. 
 	if os.path.exists(path):
 		if os.path.isdir(path):
+			# return a string with all the files in this dir
 			res = io.StringIO()
-    
 			res.write(".\n")
 			res.write("..\n")
 			for f in os.listdir(path):
 				res.write(f + "\n")
 			return res.getvalue()
 		elif os.path.isfile(path):
+		    #  return the contents of this file
 			mask = oct(os.stat(path).st_mode)[-3:]
 			print ("permissions = ", mask)
 			fd = open(path, "r")
@@ -53,11 +42,6 @@ def file_request_handler(path):
 			# so that we can have scrolling too :)
 			return body
 	else:
-    	# Technically a query processor wouldn't be the best thing here
-		# but i do have an idea of adding another scheme
-		# with a query processor that allows
-		# users to search information from
-		# a directory given a search phrase. 
 		return "File Not Found\nERR_FILE_NOT_FOUND"
  
 ############
@@ -215,7 +199,7 @@ class Browser:
 	##########
 	def load(self, url):
 		if url.startswith("file://"):
-			self.render(file_request_handler(url))
+			self.render(lex(file_request_handler(url)))
 		elif url.startswith("data:"):
 			print(data_request_handler(url))
 		else: 
@@ -235,10 +219,13 @@ class Browser:
 					cursor_x += HSTEP
 	
 	def render(self, s):
-		# TODO: ...
+		# TODO: write a render function that can be used by all of the
+		# schemes
 		cursor_x, cursor_y = HSTEP, VSTEP
-		for c in lex(s): 
-			# print ("c = ", c)
+		for c in s: 
+			if c == "\n":
+				cursor_y += VSTEP
+				cursor_x = HSTEP
 			if cursor_x >= WIDTH - HSTEP:
 				cursor_y += VSTEP
 				cursor_x = HSTEP
