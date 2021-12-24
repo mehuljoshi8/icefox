@@ -9,11 +9,10 @@ import gzip
 
 import tkinter
 
-# The initial width and height of our browser
+# The initial width and height of our browser gui
 WIDTH, HEIGHT = 800, 600
-
-def main():
-    load(' '.join(sys.argv[1:]))
+# The height and width step for characters
+HSTEP, VSTEP = 10, 18
 
 #############
 # Handles the file:// scheme
@@ -28,29 +27,38 @@ def file_request_handler(path):
 	# 				of the file/directory that we are pointing to (very 333 like)
 	assert path.startswith("file://")
 	path = path[len("file://"):]
-	# complete the rest of this method with posix
+ 
+ 	# complete the rest of this method with posix
 	# so the basic idea is open the file that we are pointing to
 	# check if the file is a directory
 	# if it is a directory, print out the contents of that directory
 	# otherwise it's a file so try to print out the contents of that file. 
 	if os.path.exists(path):
 		if os.path.isdir(path):
-			print(".")
-			print("..")
+			res = io.StringIO()
+    
+			res.write(".\n")
+			res.write("..\n")
 			for f in os.listdir(path):
-				print(f)
-		else: # the path points to a file so print out the result
-			file_o = open(path)
-			body = file_o.read()
-			file_o.close()
-			return lex(body)
+				res.write(f + "\n")
+			return res.getvalue()
+		elif os.path.isfile(path):
+			mask = oct(os.stat(path).st_mode)[-3:]
+			print ("permissions = ", mask)
+			fd = open(path, "r")
+			body = fd.read()
+			fd.close()
+			# right now I am just reading in the entire contents of the txt file
+			# in one pass a better way to do it would be with seeking
+			# so that we can have scrolling too :)
+			return body
 	else:
     	# Technically a query processor wouldn't be the best thing here
 		# but i do have an idea of adding another scheme
 		# with a query processor that allows
 		# users to search information from
 		# a directory given a search phrase. 
-		print("file doesn't exist")
+		return "File Not Found\nERR_FILE_NOT_FOUND"
  
 ############
 # Handles the data:* scheme. 
@@ -190,6 +198,8 @@ def lex(body):
 	body_output.close()
 	doc_output.close()
 
+
+# The Browser class is responsible for rendering the gui
 class Browser: 
 	def __init__(self):
 		self.window = tkinter.Tk()
@@ -216,7 +226,6 @@ class Browser:
 				print(body)
 			else: 
 				print(lex(body))
-				HSTEP, VSTEP = 10, 18
 				cursor_x, cursor_y = HSTEP, VSTEP
 				for c in lex(body): 
 					if cursor_x >= WIDTH - HSTEP: 
@@ -224,12 +233,10 @@ class Browser:
 						cursor_x = HSTEP
 					self.canvas.create_text(cursor_x, cursor_y, text=c)
 					cursor_x += HSTEP
-    
-		# self.canvas.create_rectangle(10, 20, 400, 300)
-		# self.canvas.create_oval(100, 100, 150, 150)
-		# self.canvas.create_text(200, 150, text="Hi!")
+	
+	def render():
+		# TODO: ...
 
-# # This is python's version of a main function
 if __name__ == "__main__": 
 	Browser().load(' '.join(sys.argv[1:]))
 	tkinter.mainloop()
