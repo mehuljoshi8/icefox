@@ -215,7 +215,7 @@ class Browser:
 	##########
 	def load(self, url):
 		if url.startswith("file://"):
-			print(file_request_handler(url))
+			self.render(file_request_handler(url))
 		elif url.startswith("data:"):
 			print(data_request_handler(url))
 		else: 
@@ -234,8 +234,16 @@ class Browser:
 					self.canvas.create_text(cursor_x, cursor_y, text=c)
 					cursor_x += HSTEP
 	
-	def render():
+	def render(self, s):
 		# TODO: ...
+		cursor_x, cursor_y = HSTEP, VSTEP
+		for c in lex(s): 
+			# print ("c = ", c)
+			if cursor_x >= WIDTH - HSTEP:
+				cursor_y += VSTEP
+				cursor_x = HSTEP
+			self.canvas.create_text(cursor_x, cursor_y, text=c)
+			cursor_x += HSTEP
 
 if __name__ == "__main__": 
 	Browser().load(' '.join(sys.argv[1:]))
