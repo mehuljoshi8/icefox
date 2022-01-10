@@ -56,6 +56,18 @@ def data_request_handler(data):
     data = data[len("data:text/html,"):]
     return lex(data)
 
+# takes in a chunked piece of bytes and returns an unchunked version of it
+def unchunk_data(data):
+    # TODO: write all the unchunking logic here...
+	print(data)
+	bytes_stream = io.BytesIO(data)
+	print(bytes_stream)
+	while True:
+		byte = bytes_stream.read(1)
+		if not byte:
+			break
+		print(byte)
+
 #############
 # Requests information from a given url
 #############
@@ -119,6 +131,7 @@ def request(url):
 		# print(response.read())
 		# write a helper method to take care of the transfer-encoding being set to
 		# chunk and call it here if the header has a transfer-encoding -> chunked.
+		# unchunk_data(response.read())
 		body = gzip.decompress(response.read()).decode()
 	else:
 		body = response.read().decode()
