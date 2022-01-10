@@ -6,6 +6,7 @@ import sys
 import os
 import io
 import gzip
+# import zlib
 
 import tkinter
 
@@ -20,7 +21,6 @@ HSTEP, VSTEP = 10, 18
 def file_request_handler(path): 
 	assert path.startswith("file://")
 	path = path[len("file://"):]
- 
 	if os.path.exists(path):
 		if os.path.isdir(path):
 			# return a string with all the files in this dir
@@ -62,18 +62,15 @@ def data_request_handler(data):
 def request(url): 
 	# get the scheme and url for the given "path"
 	scheme, url = url.split("://", 1)
-	
 	# websites must be either http or https
 	# adding support for file types
 	assert scheme in ["http", "https"], \
 		"Unknown scheme {}".format(scheme)
-	
 	# the host is the part right after the scheme
 	# and before the first / and the path
 	# is everything after the first /
 	host, path = url.split("/", 1)
 	path = "/" + path
-	
 	# create a socket to communicate with that site
 	# a socket is nothing more than a file descriptor for network
 	# i/o. 
@@ -82,19 +79,15 @@ def request(url):
 		type=socket.SOCK_STREAM,
 		proto=socket.IPPROTO_TCP,
 	)
-
 	# http usually uses port 443 for encrypted connections
 	port = 80 if scheme == "http" else 443
 	if ":" in host: 
 		host, port = host.split(":", 1)
 		port = int(port)
-	
 	s.connect((host, port))
-  
 	if scheme == "https": 
 		ctx = ssl.create_default_context()
 		s = ctx.wrap_socket(s, server_hostname=host)
-
 	# Send the request to the socket
 	# We are now on HTTP/1.1!!
 	s.send(b"GET " + str.encode(path) + b" HTTP/1.1\r\n" +
@@ -121,8 +114,16 @@ def request(url):
 		header, value = line.split(":", 1)
 		headers[header.lower()] = value.strip()
 
-	# Read the rest of the body
-	body = gzip.decompress(response.read()).decode()
+	print(headers)
+	if 'content-encoding' in headers and headers['content-encoding'] == 'gzip':
+		# print(response.read())
+		# write a helper method to take care of the transfer-encoding being set to
+		# chunk and call it here if the header has a transfer-encoding -> chunked.
+		body = gzip.decompress(response.read()).decode()
+	else:
+		body = response.read().decode()
+
+	print(body)
 	# Close the socket
 	s.close()
 	return headers, body
