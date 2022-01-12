@@ -1,23 +1,39 @@
 # Name: Mehul Joshi
-# icefox: just a better version of firefox. 
+# icefox: just a better version of firefox...
 import socket
 import ssl
 import sys
 import os
 import io
 import gzip
-# import zlib
 
 import tkinter
 
+'''
+TODOS: [Major issues are in * while minor are i - ...]
+ * Enable scrolling text (buttons)
+ * Enable scrolling text (mouse)
+ * Add additional support for more complex sites
+
+ i. View-Source needs to be tackled
+ ii. Data request handlers
+'''
+
+
 # The initial width and height of our browser gui
 WIDTH, HEIGHT = 800, 600
-# The height and width step for characters
-HSTEP, VSTEP = 10, 18
+# The height and width step for characters in our gui
+HSTEP, VSTEP = 10, 16
 
-#############
-# Handles the file:// scheme
-#############
+
+'''
+The file_request_handler method handles the file scheme for icefox.
+In general we call this method with a path that points to some
+file/directory, prefixed with file://, on our computer and the
+browser returns the contents of the file/directory. If the path is
+not a valid path or the file doesn't open for some reason, we
+raise an error. 
+'''
 def file_request_handler(path): 
 	assert path.startswith("file://")
 	path = path[len("file://"):]
@@ -39,14 +55,24 @@ def file_request_handler(path):
 			fd.close()
 			# right now I am just reading in the entire contents of the txt file
 			# in one pass a better way to do it would be with seeking
-			# so that we can have scrolling too :)
+			# so that we can have fast scrolling too :)
 			return body
 	else:
+    	# Raise an exception here...
 		return "File Not Found\nERR_FILE_NOT_FOUND"
  
-############
-# Handles the data:* scheme. 
-############
+'''
+The data_request_handler method takes in a single parameter data
+and given that it was prefixed with data:text/html we parse the data
+and return html data without any of the tags. 
+
+MINI TODO: 
+ * There are more data schemes out there figure
+   out which ones you want to include and update this method.
+   See:
+   1. https://en.wikipedia.org/wiki/Data_URI_scheme
+   2. https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs
+'''
 def data_request_handler(data):
     # For now, I'm going to assume that the
     # data scheme can only take 1 form which is
@@ -56,9 +82,20 @@ def data_request_handler(data):
     data = data[len("data:text/html,"):]
     return lex(data)
 
-# takes in a chunked piece of bytes and returns an unchunked version of it
-def unchunk_data(data):
+'''
+The unchunk method takes in some data that is chunked via
+a chunked transfer encoding and returns the unchunked data
+that can later be used to decompress and decode. 
+For reference see: 
+ 1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+ 2. https://en.wikipedia.org/wiki/Chunked_transfer_encoding
+'''
+def unchunk(data):
     # TODO: write all the unchunking logic here...
+    # the general algorithm would be to 
+    # read how many bytes each chunk has and then
+    # iterate through those many bytes adding it some
+    # kind of variable. 
 	print(data)
 	bytes_stream = io.BytesIO(data)
 	print(bytes_stream)
@@ -68,9 +105,13 @@ def unchunk_data(data):
 			break
 		print(byte)
 
-#############
-# Requests information from a given url
-#############
+'''
+The request method processes a url and returns
+the headers and body from a given url according to
+the HTTP/S. 
+See for reference: 
+ 1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages
+'''
 def request(url): 
 	# get the scheme and url for the given "path"
 	scheme, url = url.split("://", 1)
@@ -114,7 +155,6 @@ def request(url):
 
 	# parse the response
 	statusline = response.readline().decode() 
-	# print("decompressed statusline = ", gzip.decompress(statusline))
 	version, status, explanation = statusline.split(" ", 2)
 	assert status == "200", "{}: {}".format(status, explanation)
 
@@ -131,16 +171,19 @@ def request(url):
 		# print(response.read())
 		# write a helper method to take care of the transfer-encoding being set to
 		# chunk and call it here if the header has a transfer-encoding -> chunked.
-		# unchunk_data(response.read())
-		body = gzip.decompress(response.read()).decode()
+		data = response.read()
+		if 'transfer-encoding' in header and headers['transfer-encoding'] == "chunked":
+			data = unchunk(data)
+		body = gzip.decompress(data).decode()
 	else:
 		body = response.read().decode()
 
-	print(body)
-	# Close the socket
 	s.close()
 	return headers, body
 
+'''
+The lex_helper method...
+'''
 def lex_helper(c, stream, in_angle):
 	if c == "&lt;":
 		stream.write("<")
@@ -158,9 +201,9 @@ def lex_helper(c, stream, in_angle):
 		return False
 	return True
 
-########
-# 
-########
+'''
+The lex method...
+'''
 def lex(body):
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
@@ -196,6 +239,34 @@ def lex(body):
 	body_output.close()
 	doc_output.close()
 
+'''
+The layout function takes in some text and determines where
+on the screen each character on the screen is supposed to be rendered.
+Note: it doesn't actually have to handle the rendering of each character on our gui. 
+
+1. Figure out a way to enable scrolling through
+   preloading the location of each character on the gui
+   and then when a user scrolls we just have to figure out
+   what's the "frame" that they are looking at of our slice. 
+2. Then optimize...
+'''
+def layout(text):
+	# one idea is to just bind each character 0 - len
+	# to some position on our gui and that's all this function has to return. 
+	display_list = []
+	cursor_x, cursor_y = HSTEP, VSTEP
+	for c in text:
+		if c == '\n':
+			cursor_y += VSTEP
+			cursor_x = HSTEP
+		if cursor_x >= WIDTH - HSTEP:
+			cursor_y += VSTEP
+			cursor_x = HSTEP
+		if cursor_y >= HEIGHT - VSTEP:
+			cursor_y = VSTEP
+		display_list.append((cursor_x, cursor_y, c))
+		cursor_x += HSTEP
+	return display_list
 
 # The Browser class is responsible for rendering the gui
 class Browser: 
@@ -208,33 +279,33 @@ class Browser:
 		)
 		self.canvas.pack()
 	
-	###########
-	# Loads a given scheme into our browser
-	##########
-	def load(self, url):
-		if url.startswith("file://"):
-			self.render(lex(file_request_handler(url)))
-		elif url.startswith("data:"):
-			print(data_request_handler(url))
+	'''
+	The load method takes in a single parameter uri
+	and attempts to load what that uri points to in
+	our browser. 
+ 	'''
+	def load(self, uri):
+		if uri.startswith("file://"):
+			self.render(lex(file_request_handler(uri)))
+		elif uri.startswith("data:"):
+			print(data_request_handler(uri))
 		else: 
-			header, body = request(url)
+			header, body = request(uri)
 			# Technically files can also be put underview source
 			# but I am going to save that for a later exercise   	
-			if url.startswith("view-source:"):
+			if uri.startswith("view-source:"):
 				print(body)
-			else: 
-				print(lex(body))
-				cursor_x, cursor_y = HSTEP, VSTEP
-				for c in lex(body): 
-					if cursor_x >= WIDTH - HSTEP: 
-						cursor_y += VSTEP
-						cursor_x = HSTEP
-					self.canvas.create_text(cursor_x, cursor_y, text=c)
-					cursor_x += HSTEP
+			else:
+				pos_lst = layout(lex(body))
+				print(pos_lst)
+				for pos in layout(lex(body)):
+					self.canvas.create_text(pos[0], pos[1], text=pos[2])
 	
 	def render(self, s):
 		# TODO: write a render function that can be used by all of the
 		# schemes
+		pos_lst = layout(s)
+		print(pos_lst)
 		cursor_x, cursor_y = HSTEP, VSTEP
 		for c in s: 
 			if c == "\n":
