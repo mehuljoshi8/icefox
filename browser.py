@@ -116,10 +116,7 @@ See for reference:
  1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages
 '''
 def request(url): 
-	# get the scheme and url for the given "path"
 	scheme, url = url.split("://", 1)
-	# websites must be either http or https
-	# adding support for file types
 	assert scheme in ["http", "https"], \
 		"Unknown scheme {}".format(scheme)
 	# the host is the part right after the scheme
@@ -151,16 +148,13 @@ def request(url):
      	   b"Connection: close\r\n" + 
            b"User-Agent: icefox\r\n" + 
            b"Accept-Encoding: gzip\r\n\r\n")
- 
 	# get the response back
 	# set the compression stuff here 
 	response = s.makefile("rb", encoding="utf-8", newline="\r\n")
-
 	# parse the response
 	statusline = response.readline().decode() 
 	version, status, explanation = statusline.split(" ", 2)
 	assert status == "200", "{}: {}".format(status, explanation)
-
 	# Create the headers
 	headers = {}
 	while True: 
@@ -168,8 +162,6 @@ def request(url):
 		if line == "\r\n": break
 		header, value = line.split(":", 1)
 		headers[header.lower()] = value.strip()
-
-	print(headers)
 	if 'content-encoding' in headers and headers['content-encoding'] == 'gzip':
 		# print(response.read())
 		# write a helper method to take care of the transfer-encoding being set to
@@ -180,7 +172,6 @@ def request(url):
 		body = gzip.decompress(data).decode()
 	else:
 		body = response.read().decode()
-
 	s.close()
 	return headers, body
 
@@ -194,7 +185,6 @@ def lex_helper(c, stream, in_angle):
 	if c == "&gt;": 
 		stream.write(">")
 		return False
-
 	if c == "<":
 		return True
 	if c == ">":
