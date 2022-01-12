@@ -14,9 +14,12 @@ TODOS: [Major issues are in * while minor are i - ...]
  * Enable scrolling text (buttons)
  * Enable scrolling text (mouse)
  * Add additional support for more complex sites
+ * Make the browser resizable
+ * Enable zooming in both +/- directions.
 
  i. View-Source needs to be tackled
  ii. Data request handlers
+ iii. Handle line breaks
 '''
 
 
