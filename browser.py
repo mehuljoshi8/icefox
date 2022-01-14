@@ -11,23 +11,21 @@ import tkinter
 
 '''
 TODOS: [Major issues are in * while minor are i - ...]
- * Enable scrolling text (buttons)
  * Enable scrolling text (mouse)
  * Add additional support for more complex sites
  * Make the browser resizable
  * Enable zooming in both +/- directions.
+ * You can scroll past 0 and the longest height which isn't expected. 
 
  i. View-Source needs to be tackled
  ii. Data request handlers
  iii. Handle line breaks
 '''
 
-
 # The initial width and height of our browser gui
 WIDTH, HEIGHT = 800, 600
 # The height and width step for characters in our gui
 HSTEP, VSTEP = 10, 16
-
 
 '''
 The file_request_handler method handles the file scheme for icefox.
@@ -195,7 +193,8 @@ def lex_helper(c, stream, in_angle):
 	return True
 
 '''
-The lex method...
+The lex method is used to parse a file and render it's output
+according to the file that it is. 
 '''
 def lex(body):
 	body_output = io.StringIO()
@@ -255,14 +254,14 @@ def layout(text):
 		if cursor_x >= WIDTH - HSTEP:
 			cursor_y += VSTEP
 			cursor_x = HSTEP
-		if cursor_y >= HEIGHT - VSTEP:
-			cursor_y = VSTEP
 		display_list.append((cursor_x, cursor_y, c))
 		cursor_x += HSTEP
 	return display_list
 
 # The Browser class is responsible for rendering the gui
-class Browser: 
+class Browser:
+	SCROLL_STEP = 50
+	
 	def __init__(self):
 		self.window = tkinter.Tk()
 		self.canvas = tkinter.Canvas(
@@ -271,7 +270,25 @@ class Browser:
 			height=HEIGHT
 		)
 		self.canvas.pack()
-	
+		self.scroll = 0
+		self.window.bind("<Down>", self.scrolldown)
+		self.window.bind("<Up>", self.scrollup)
+ 
+	def scrolldown(self, e):
+		self.scroll += self.SCROLL_STEP
+		self.draw()
+  
+	def scrollup(self, e):
+		self.scroll -= self.SCROLL_STEP
+		self.draw()
+ 
+	def draw(self):
+		self.canvas.delete("all")
+		for x, y, c in self.display_list:
+			if y > self.scroll + HEIGHT: continue
+			if y + VSTEP < self.scroll: continue
+			self.canvas.create_text(x, y - self.scroll, text=c)
+
 	'''
 	The load method takes in a single parameter uri
 	and attempts to load what that uri points to in
@@ -279,36 +296,23 @@ class Browser:
  	'''
 	def load(self, uri):
 		if uri.startswith("file://"):
-			self.render(lex(file_request_handler(uri)))
+			# self.render(lex(file_request_handler(uri)))
+			print(lex(file_request_handler(uri)))
 		elif uri.startswith("data:"):
 			print(data_request_handler(uri))
 		else: 
 			header, body = request(uri)
+			text = lex(body)
+			self.display_list = layout(text)
+			self.draw()
 			# Technically files can also be put underview source
 			# but I am going to save that for a later exercise   	
-			if uri.startswith("view-source:"):
-				print(body)
-			else:
-				pos_lst = layout(lex(body))
-				print(pos_lst)
-				for pos in layout(lex(body)):
-					self.canvas.create_text(pos[0], pos[1], text=pos[2])
-	
-	def render(self, s):
-		# TODO: write a render function that can be used by all of the
-		# schemes
-		pos_lst = layout(s)
-		print(pos_lst)
-		cursor_x, cursor_y = HSTEP, VSTEP
-		for c in s: 
-			if c == "\n":
-				cursor_y += VSTEP
-				cursor_x = HSTEP
-			if cursor_x >= WIDTH - HSTEP:
-				cursor_y += VSTEP
-				cursor_x = HSTEP
-			self.canvas.create_text(cursor_x, cursor_y, text=c)
-			cursor_x += HSTEP
+			# if uri.startswith("view-source:"):
+			# 	print(body)
+			# else:
+			# 	pos_lst = layout(lex(body))
+			# 	for x, y, c in layout(lex(body)):
+			# 		self.canvas.create_text(x, y, text=c)
 
 if __name__ == "__main__": 
 	Browser().load(' '.join(sys.argv[1:]))
