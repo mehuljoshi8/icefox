@@ -15,8 +15,8 @@ TODOS: [Major issues are in * while minor are i - ...]
  * Add additional support for more complex sites
  * Make the browser resizable
  * Enable zooming in both +/- directions.
- * You can scroll past 0 and the longest height which isn't expected. 
-
+ * Add additional support for files
+ 
  i. View-Source needs to be tackled
  ii. Data request handlers
  iii. Handle line breaks
@@ -49,19 +49,14 @@ def file_request_handler(path):
 			return res.getvalue()
 		elif os.path.isfile(path):
 		    #  return the contents of this file
-			mask = oct(os.stat(path).st_mode)[-3:]
-			print ("permissions = ", mask)
 			fd = open(path, "r")
-			body = fd.read()
+			content = fd.read()
 			fd.close()
-			# right now I am just reading in the entire contents of the txt file
-			# in one pass a better way to do it would be with seeking
-			# so that we can have fast scrolling too :)
-			return body
+			return content
 	else:
     	# Raise an exception here...
 		return "File Not Found\nERR_FILE_NOT_FOUND"
- 
+
 '''
 The data_request_handler method takes in a single parameter data
 and given that it was prefixed with data:text/html we parse the data
@@ -174,7 +169,8 @@ def request(url):
 	return headers, body
 
 '''
-The lex_helper method...
+The lex_helper method is used to produce 
+the results for the lex method. 
 '''
 def lex_helper(c, stream, in_angle):
 	if c == "&lt;":
@@ -260,7 +256,7 @@ def layout(text):
 
 # The Browser class is responsible for rendering the gui
 class Browser:
-	SCROLL_STEP = 50
+	SCROLL_STEP = 32
 	
 	def __init__(self):
 		self.window = tkinter.Tk()
@@ -273,14 +269,16 @@ class Browser:
 		self.scroll = 0
 		self.window.bind("<Down>", self.scrolldown)
 		self.window.bind("<Up>", self.scrollup)
- 
+
 	def scrolldown(self, e):
-		self.scroll += self.SCROLL_STEP
-		self.draw()
+		if self.scroll < self.display_list[-1][1]:
+			self.scroll += self.SCROLL_STEP
+			self.draw()
   
 	def scrollup(self, e):
-		self.scroll -= self.SCROLL_STEP
-		self.draw()
+		if self.scroll > 0:
+			self.scroll -= self.SCROLL_STEP
+			self.draw()
  
 	def draw(self):
 		self.canvas.delete("all")
@@ -289,30 +287,18 @@ class Browser:
 			if y + VSTEP < self.scroll: continue
 			self.canvas.create_text(x, y - self.scroll, text=c)
 
-	'''
-	The load method takes in a single parameter uri
-	and attempts to load what that uri points to in
-	our browser. 
- 	'''
+	# The load method attempts to load a uri into our browser. 
 	def load(self, uri):
 		if uri.startswith("file://"):
-			# self.render(lex(file_request_handler(uri)))
-			print(lex(file_request_handler(uri)))
+			text = lex(file_request_handler(uri))
 		elif uri.startswith("data:"):
+			text = ""
 			print(data_request_handler(uri))
 		else: 
 			header, body = request(uri)
 			text = lex(body)
-			self.display_list = layout(text)
-			self.draw()
-			# Technically files can also be put underview source
-			# but I am going to save that for a later exercise   	
-			# if uri.startswith("view-source:"):
-			# 	print(body)
-			# else:
-			# 	pos_lst = layout(lex(body))
-			# 	for x, y, c in layout(lex(body)):
-			# 		self.canvas.create_text(x, y, text=c)
+		self.display_list = layout(text)
+		self.draw()
 
 if __name__ == "__main__": 
 	Browser().load(' '.join(sys.argv[1:]))
