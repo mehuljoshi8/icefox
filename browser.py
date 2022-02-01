@@ -1,5 +1,5 @@
-# Name: Mehul Joshi
-# icefox: just a better version of firefox...
+# icefox: just a better firefox
+
 import socket
 import ssl
 import sys
@@ -11,6 +11,9 @@ import tkinter
 
 '''
 TODOS: [Major issues are in * while minor are i - ...]
+ * Files that aren't suffixed with .html are treated as HTML files :(
+	This applies to both files retrieved over the web and local files. 
+ 
  * Enable scrolling text (mouse)
  * Add additional support for more complex sites
  * Make the browser resizable
@@ -168,10 +171,7 @@ def request(url):
 	s.close()
 	return headers, body
 
-'''
-The lex_helper method is used to produce 
-the results for the lex method. 
-'''
+# Need an update
 def lex_helper(c, stream, in_angle):
 	if c == "&lt;":
 		stream.write("<")
@@ -188,10 +188,7 @@ def lex_helper(c, stream, in_angle):
 		return False
 	return True
 
-'''
-The lex method is used to parse a file and render it's output
-according to the file that it is. 
-'''
+# TODO needs an update
 def lex(body):
 	body_output = io.StringIO()
 	doc_output = io.StringIO()
@@ -219,13 +216,17 @@ def lex(body):
 			in_angle = lex_helper(s, doc_output, in_angle)
 			c = c + 1
     
+	res = ""
 	if found_body:
-		return body_output.getvalue()
+		res =  body_output.getvalue()
 	else:
-		return doc_output.getvalue()
-  
+		res = doc_output.getvalue()
+
 	body_output.close()
 	doc_output.close()
+	print("in lex")
+	print(found_body)
+	return res
 
 '''
 The layout function takes in some text and determines where
@@ -243,6 +244,7 @@ def layout(text):
 	# to some position on our gui and that's all this function has to return. 
 	display_list = []
 	cursor_x, cursor_y = HSTEP, VSTEP
+	print("text = ", text)
 	for c in text:
 		if c == '\n':
 			cursor_y += VSTEP
@@ -257,7 +259,7 @@ def layout(text):
 # The Browser class is responsible for rendering the gui
 class Browser:
 	SCROLL_STEP = 32
-	
+
 	def __init__(self):
 		self.window = tkinter.Tk()
 		self.canvas = tkinter.Canvas(
@@ -290,11 +292,13 @@ class Browser:
 	# The load method attempts to load a uri into our browser. 
 	def load(self, uri):
 		if uri.startswith("file://"):
-			text = lex(file_request_handler(uri))
+			text = file_request_handler(uri)
+			if uri.endswith(".html"):
+				text = lex(text)
 		elif uri.startswith("data:"):
 			text = ""
 			print(data_request_handler(uri))
-		else: 
+		else:
 			header, body = request(uri)
 			text = lex(body)
 		self.display_list = layout(text)
