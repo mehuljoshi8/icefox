@@ -6,7 +6,7 @@ A programmer's browser, built by programmers for programmers.
 TODO
 
 ## Current Status
-TODO
+Making everything modular
 
 ## Upgrades for the future
  * Rewrite the entire system in go :)

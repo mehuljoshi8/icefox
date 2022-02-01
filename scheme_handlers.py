@@ -23,7 +23,6 @@ WIDTH, HEIGHT = 800, 600
 # The height and width step for characters in our gui
 HSTEP, VSTEP = 10, 16
 
-
 '''
 The data_request_handler method takes in a single parameter data
 and given that it was prefixed with data:text/html we parse the data
@@ -44,7 +43,6 @@ def data_request_handler(data):
     # data:text/html,[my html data]
     data = data[len("data:text/html,"):]
     return lex(data)
-
 
 # Need an update
 def lex_helper(c, stream, in_angle):
@@ -103,20 +101,8 @@ def lex(body):
 	print(found_body)
 	return res
 
-'''
-The layout function takes in some text and determines where
-on the screen each character on the screen is supposed to be rendered.
-Note: it doesn't actually have to handle the rendering of each character on our gui. 
 
-1. Figure out a way to enable scrolling through
-   preloading the location of each character on the gui
-   and then when a user scrolls we just have to figure out
-   what's the "frame" that they are looking at of our slice. 
-2. Then optimize...
-'''
 def layout(text):
-	# one idea is to just bind each character 0 - len
-	# to some position on our gui and that's all this function has to return. 
 	display_list = []
 	cursor_x, cursor_y = HSTEP, VSTEP
 	print("text = ", text)
