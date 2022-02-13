@@ -5,6 +5,11 @@ import os
 import io
 
 '''
+TODO: Once styling is applied to the browser, 
+need to update to return links that can be clicked.
+'''
+
+'''
 The file_request_handler method handles the file scheme for icefox.
 In general we call this method with a path that points to some
 file/directory, prefixed with file://, on our computer and the

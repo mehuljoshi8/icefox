@@ -5,9 +5,9 @@
 
 import sys
 
+from utils import *
 from file_handler import *
 from web_handler import *
-from scheme_handlers import *
 import tkinter
 
 # The Browser class is responsible for rendering the gui
@@ -52,9 +52,10 @@ class Browser:
 			text = ""
 			print(data_request_handler(uri))
 		else:
-			header, body = request(uri)
-			text = lex(body)
-		self.display_list = layout(text)
+			header, text = request(uri)
+			if uri.endswith(".html"):
+				text = lex(text)
+		self.display_list = get_layout(text)
 		self.draw()
 
 if __name__ == "__main__": 

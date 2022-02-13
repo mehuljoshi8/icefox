@@ -1,8 +1,24 @@
 # handles all the data that is coming through the web
 import socket
 import ssl
+import io
 
 import gzip
+
+# The get_chunk_size method takes in a bytes stream
+# and returns the chunk_size of a given block
+def __get_chunk_size(stream): 
+		hex_string = ""
+		prev_byte = None
+		curr_byte = None
+		while True:
+			curr_byte = stream.read(1)
+			if prev_byte == b'\r' and curr_byte == b'\n':
+				break
+			if not curr_byte == b'\r':
+				hex_string += curr_byte.decode()
+			prev_byte = curr_byte
+		return int(hex_string, 16)
 
 '''
 The unchunk method takes in some data that is chunked via
@@ -12,20 +28,20 @@ For reference see:
  1. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
  2. https://en.wikipedia.org/wiki/Chunked_transfer_encoding
 '''
-def unchunk(data):
-    # TODO: write all the unchunking logic here...
-    # the general algorithm would be to 
-    # read how many bytes each chunk has and then
-    # iterate through those many bytes adding it some
-    # kind of variable. 
-	print(data)
+def __unchunk(data):
 	bytes_stream = io.BytesIO(data)
-	print(bytes_stream)
+	bytes_read = 0
+	unchunked_data = b''
 	while True:
-		byte = bytes_stream.read(1)
-		if not byte:
+		chunk_size = __get_chunk_size(bytes_stream)
+		if chunk_size == 0:
 			break
-		print(byte)
+  		# also read two additional bytes for the \r\n
+		for i in range(0, chunk_size):
+			byte = bytes_stream.read(1)
+			unchunked_data += byte
+		bytes_stream.read(2)
+	return unchunked_data
 
 '''
 The request method processes a url and returns
@@ -45,7 +61,7 @@ def request(url):
 	path = "/" + path
 	# create a socket to communicate with that site
 	# a socket is nothing more than a file descriptor for network
-	# i/o. 
+	# i/o.
 	s = socket.socket(
 		family=socket.AF_INET,
 		type=socket.SOCK_STREAM,
@@ -81,15 +97,12 @@ def request(url):
 		if line == "\r\n": break
 		header, value = line.split(":", 1)
 		headers[header.lower()] = value.strip()
+	data = response.read()
 	if 'content-encoding' in headers and headers['content-encoding'] == 'gzip':
-		# print(response.read())
-		# write a helper method to take care of the transfer-encoding being set to
-		# chunk and call it here if the header has a transfer-encoding -> chunked.
-		data = response.read()
-		if 'transfer-encoding' in header and headers['transfer-encoding'] == "chunked":
-			data = unchunk(data)
-		body = gzip.decompress(data).decode()
+		if 'transfer-encoding' in headers and headers['transfer-encoding'] == "chunked":
+			data = __unchunk(data)
+		body = gzip.decompress(data).decode(errors="replace")
 	else:
-		body = response.read().decode()
+		body = data.decode()
 	s.close()
 	return headers, body
